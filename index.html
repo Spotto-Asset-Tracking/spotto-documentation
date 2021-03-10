@@ -965,7 +965,27 @@
               </ul>
           </li>
           <li>
-            <a href="#mqtt-broker" class="toc-h1 toc-link" data-title="MQTT Broker">MQTT Broker</a>
+            <a href="#spotto-mqtt-broker" class="toc-h1 toc-link" data-title="Spotto MQTT Broker">Spotto MQTT Broker</a>
+              <ul class="toc-list-h2">
+                  <li>
+                    <a href="#introduction" class="toc-h2 toc-link" data-title="Introduction">Introduction</a>
+                  </li>
+                  <li>
+                    <a href="#what-is-mqtt" class="toc-h2 toc-link" data-title="What is MQTT">What is MQTT</a>
+                  </li>
+                  <li>
+                    <a href="#mqtt-topics" class="toc-h2 toc-link" data-title="MQTT Topics">MQTT Topics</a>
+                  </li>
+                  <li>
+                    <a href="#connecting-to-the-broker" class="toc-h2 toc-link" data-title="Connecting to the broker">Connecting to the broker</a>
+                  </li>
+                  <li>
+                    <a href="#subscribing-to-a-topic" class="toc-h2 toc-link" data-title="Subscribing to a topic">Subscribing to a topic</a>
+                  </li>
+                  <li>
+                    <a href="#spotto-events" class="toc-h2 toc-link" data-title="Spotto Events">Spotto Events</a>
+                  </li>
+              </ul>
           </li>
       </ul>
         <ul class="toc-footer">
@@ -22215,9 +22235,83 @@ to be only what is relevant for the given organisation</p>
 <td>Webhook</td>
 </tr>
 </tbody></table>
-<h1 id='mqtt-broker'>MQTT Broker</h1>
+<h1 id='spotto-mqtt-broker'>Spotto MQTT Broker</h1><h2 id='introduction'>Introduction</h2>
 <p>Welcome to the Spotto MQTT Service</p>
 
+<p>MQTT is a lightweight publish / subscribe messaging protocol that is popular among the IOT space. Whenever something significant happens in Spotto, like an asset moving or a reader coming online, Spotto will publish this information to an MQTT broker. Your own applications can subscribe to this stream and use the information to to solve bespoke business problems. </p>
+<h2 id='what-is-mqtt'>What is MQTT</h2>
+<p>MQTT uses a publish subscribe protocol where messages are communicated via topics.</p>
+
+<p>The system consists of clients and an MQTT broker. Clients are able to publish messages to a topic, the broker then exposes that message to any clients who are subscribed to that topic.</p>
+<h2 id='mqtt-topics'>MQTT Topics</h2>
+<p>MQTT topics are hierarchical with levels of the hierarchy being separated by a /. </p>
+
+<p>E.g. your_organisation/Arrived/thingId1</p>
+
+<p>Special wildcard character # can be used to subscribe to all topics at a level of the hierarchy. </p>
+
+<p>to subscribe to all arrived events for your organisation
+your_organisation/Arrived/#</p>
+
+<p>For more information on mqtt <a href="https://mqtt.org/getting-started/">click here</a></p>
+<h2 id='connecting-to-the-broker'>Connecting to the broker</h2><div class="highlight"><pre class="highlight javascript tab-javascript"><code><span class="k">import</span> <span class="nx">mqtt</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">async-mqtt</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">username</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">your_username</span><span class="dl">'</span><span class="p">;</span>
+<span class="kd">const</span> <span class="nx">password</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">your_password</span><span class="dl">'</span><span class="p">;</span>
+<span class="kd">const</span> <span class="nx">endpoint</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">mqtt://&lt;spotto-mqtt-endpoint&gt;</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">connect</span> <span class="o">=</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="kd">const</span> <span class="nx">connection</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">mqtt</span><span class="p">.</span><span class="nx">connectAsync</span><span class="p">(</span>
+        <span class="nx">endpoint</span><span class="p">,</span>
+        <span class="p">{</span>
+            <span class="nx">username</span><span class="p">,</span>
+            <span class="nx">password</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">);</span>
+
+    <span class="k">return</span> <span class="nx">connection</span><span class="p">;</span>
+<span class="p">};</span>
+
+</code></pre></div><h2 id='subscribing-to-a-topic'>Subscribing to a topic</h2><div class="highlight"><pre class="highlight javascript tab-javascript"><code><span class="c1">// Use code snippet from previous section</span>
+<span class="kd">const</span> <span class="nx">client</span> <span class="o">=</span> <span class="nx">connect</span><span class="p">();</span>
+
+<span class="kd">const</span> <span class="nx">topic</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">your_organisation/Arrived/thing_id</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="nx">client</span><span class="p">.</span><span class="nx">subscribe</span><span class="p">(</span><span class="nx">topic</span><span class="p">);</span>
+
+<span class="nx">client</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="dl">'</span><span class="s1">message</span><span class="dl">'</span><span class="p">,</span> <span class="p">(</span><span class="nx">topic</span><span class="p">,</span> <span class="nx">message</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="c1">// message is Buffer</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">message</span><span class="p">.</span><span class="nx">toString</span><span class="p">())</span>
+
+    <span class="c1">// Run your bespoke logic here</span>
+<span class="p">});</span>
+
+</code></pre></div><h2 id='spotto-events'>Spotto Events</h2>
+<p>Spotto exposes the following Events as they occur.</p>
+<h3 id='arrived'>Arrived</h3>
+<p>Topic
+<aside class="notice">
+${organisation}/Arrived/${asset.id}
+</aside></p>
+<div class="highlight"><pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"number"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"organisation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Arrived"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"asset"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w"> 
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w"> 
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"reader"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w"> 
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+
+</span></code></pre></div>
       </div>
       <div class="dark-box">
           <div class="lang-selector">
